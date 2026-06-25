@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSC Subject Selector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#15233f; --ink-soft:#34425f; --paper:#f4f1e9; --card:#ffffff;
+    --gold:#c8902b; --gold-bright:#e7ad3f; --line:#e2ddd0;
+    --good:#2f7d54; --warn:#b5532a;
+    --eng:#3f6fb5; --mat:#5a4b9c; --sci:#2f8a7e; --hsie:#b5742a;
+    --lang:#9c3f6b; --tas:#5d7a33; --capa:#c0532f; --pdhpe:#2f7d8a; --vet:#6b6f7a;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px;}
+
+  header.top{background:var(--ink);color:#fff;padding:34px 0 30px;background-image:radial-gradient(circle at 92% 0%,rgba(231,173,63,.18),transparent 45%);}
+  .eyebrow{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-bright);font-weight:600;margin:0 0 10px;}
+  header.top h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(30px,5vw,52px);line-height:1.03;margin:0;letter-spacing:-.01em;}
+  header.top h1 em{font-style:italic;color:var(--gold-bright);}
+  header.top p.lede{margin:14px 0 0;max-width:60ch;color:#cdd4e2;font-size:15.5px;}
+  .rules{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;}
+  .rule{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:9px 13px;font-size:13px;color:#e7ebf2;}
+  .rule b{color:#fff;}
+
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:30px;align-items:start;padding:30px 0 70px;}
+  @media(max-width:880px){.grid{grid-template-columns:1fr;}}
+
+  .controls{margin-bottom:18px;}
+  .searchrow{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .search{flex:1;min-width:180px;border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px 14px;font-size:14px;font-family:inherit;color:var(--ink);}
+  .search:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;}
+  .chip{border:1px solid var(--line);background:#fff;color:var(--ink-soft);padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:.12s;}
+  .chip:hover{border-color:var(--ink-soft);}
+  .chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .chip.flag[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#23170a;}
+  .facount{font-size:12px;color:var(--ink-soft);margin:16px 0 9px;letter-spacing:.02em;}
+
+  .group-title{font-family:"Fraunces",serif;font-size:20px;font-weight:600;margin:26px 0 4px;display:flex;align-items:center;gap:10px;}
+  .group-title .dot{width:11px;height:11px;border-radius:50%;flex:none;}
+  .group-sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 14px;}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:12px;}
+  .card{position:relative;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--fac,var(--ink));border-radius:11px;padding:14px 14px 13px;cursor:pointer;transition:.12s;text-align:left;font-family:inherit;display:flex;flex-direction:column;min-height:118px;}
+  .card:hover{border-color:var(--ink-soft);transform:translateY(-1px);box-shadow:0 6px 16px -10px rgba(21,35,63,.4);}
+  .card:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  .card[aria-pressed="true"]{background:linear-gradient(180deg,#fffdf6,#fff);border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold);}
+  .card .tick{position:absolute;top:11px;right:11px;width:21px;height:21px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;color:#fff;font-size:12px;transition:.12s;}
+  .card[aria-pressed="true"] .tick{background:var(--gold);border-color:var(--gold);}
+  .card[aria-pressed="true"] .tick::after{content:"\2713";}
+  .cname{font-weight:600;font-size:14.5px;line-height:1.22;padding-right:26px;letter-spacing:-.01em;}
+  .cmeta{margin-top:auto;padding-top:9px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;}
+  .tag{font-size:10.5px;font-weight:600;letter-spacing:.03em;border-radius:5px;padding:2.5px 6px;text-transform:uppercase;white-space:nowrap;}
+  .tag.units{background:#eef0f4;color:var(--ink-soft);}
+  .tag.major{background:#fbeccb;color:#8a5a12;}
+  .tag.ext{background:#e9eefb;color:#3a558f;}
+  .tag.exam{background:#eef3ef;color:#2f7d54;}
+  .tag.work{background:#f3eeea;color:#8a5230;}
+  .cnote{font-size:11.5px;color:var(--ink-soft);margin-top:7px;line-height:1.35;}
+
+  .panel{position:sticky;top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 19px;}
+  .panel h2{font-family:"Fraunces",serif;font-size:19px;margin:0 0 4px;font-weight:600;}
+  .panel .ph-sub{font-size:12px;color:var(--ink-soft);margin:0 0 16px;}
+  .meter{margin-bottom:13px;}
+  .meter .ml{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;font-weight:500;}
+  .meter .ml .v{font-variant-numeric:tabular-nums;color:var(--ink-soft);}
+  .bar{height:8px;border-radius:999px;background:#ececf0;overflow:hidden;}
+  .bar i{display:block;height:100%;width:0;background:var(--gold);border-radius:999px;transition:width .3s ease;}
+  .bar.met i{background:var(--good);}
+  .statline{display:flex;gap:10px;margin:16px 0 4px;}
+  .stat{flex:1;background:#f7f5ef;border:1px solid var(--line);border-radius:9px;padding:10px 8px;text-align:center;}
+  .stat b{display:block;font-family:"Fraunces",serif;font-size:24px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .stat span{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;}
+  .checks{margin:16px 0 4px;display:flex;flex-direction:column;gap:7px;}
+  .check{display:flex;gap:8px;font-size:12.5px;align-items:flex-start;line-height:1.35;}
+  .check .ic{flex:none;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;font-size:11px;color:#fff;margin-top:1px;}
+  .check.ok .ic{background:var(--good);}
+  .check.ok .ic::after{content:"\2713";}
+  .check.no .ic{background:var(--warn);}
+  .check.no .ic::after{content:"!";font-weight:700;}
+  .sel-list{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;}
+  .sel-list h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 9px;}
+  .sel-empty{font-size:12.5px;color:var(--ink-soft);font-style:italic;}
+  .sel-item{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;border-bottom:1px dotted var(--line);}
+  .sel-item .sd{width:7px;height:7px;border-radius:50%;flex:none;}
+  .sel-item .sn{flex:1;line-height:1.25;}
+  .sel-item .su{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:11px;}
+  .sel-item button{border:none;background:none;color:var(--warn);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;font-family:inherit;}
+  .clear{margin-top:14px;width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-soft);font-family:inherit;}
+  .clear:hover{border-color:var(--warn);color:var(--warn);}
+  footer{border-top:1px solid var(--line);padding:24px 0 50px;font-size:12px;color:var(--ink-soft);}
+  footer p{margin:4px 0;max-width:80ch;}
+  .empty-msg{grid-column:1/-1;padding:36px;text-align:center;color:var(--ink-soft);font-size:14px;font-style:italic;}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Year 11 &amp; 12 &middot; NESA Board Developed Courses</p>
+    <h1>HSC Subject Selector</h1>
+    <p class="lede">Build your Preliminary and HSC pattern from the courses in the handbook, plus the ATAR-eligible VET courses you can study through TAFE NSW. Tap a course to add it; the planner keeps a live count of your units, flags every major work, and checks the rules as you go.</p>
+    <div class="rules">
+      <div class="rule"><b>English is compulsory</b> &mdash; every student must study an English course</div>
+      <div class="rule"><b>12+ units</b> in Preliminary (Year 11)</div>
+      <div class="rule"><b>10+ units</b> in HSC (Year 12)</div>
+      <div class="rule">ATAR = English + your <b>best 8 units</b></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <main>
+      <div class="controls">
+        <div class="searchrow">
+          <input id="search" class="search" type="search" placeholder="Search courses &mdash; e.g. physics, history, hospitality..." aria-label="Search courses">
+        </div>
+        <div class="chips" id="facChips" role="group" aria-label="Filter by faculty"></div>
+        <div class="chips" style="margin-top:9px" id="flagChips" role="group" aria-label="Filter by feature">
+          <button class="chip flag" data-flag="major" aria-pressed="false">Has a major work</button>
+          <button class="chip flag" data-flag="ext" aria-pressed="false">Has an extension</button>
+          <button class="chip flag" data-flag="vet" aria-pressed="false">VET / TAFE only</button>
+          <button class="chip flag" data-flag="selected" aria-pressed="false">My selections</button>
+        </div>
+        <p class="facount" id="facount"></p>
+      </div>
+      <div id="catalog"></div>
+    </main>
+
+    <aside>
+      <div class="panel">
+        <h2>Your pattern</h2>
+        <div class="meter">
+          <div class="ml"><span>Preliminary units</span><span class="v"><b id="prelimVal">0</b> / 12 min</span></div>
+          <div class="bar" id="prelimBar"><i></i></div>
+        </div>
+        <div class="meter">
+          <div class="ml"><span>HSC units</span><span class="v"><b id="hscVal">0</b> / 10 min</span></div>
+          <div class="bar" id="hscBar"><i></i></div>
+        </div>
+        <div class="statline">
+          <div class="stat"><b id="courseCount">0</b><span>Courses</span></div>
+          <div class="stat"><b id="majorCount">0</b><span>Major works</span></div>
+          <div class="stat"><b id="vetCount">0</b><span>VET / TAFE</span></div>
+        </div>
+        <div class="checks" id="checks"></div>
+        <div class="sel-list">
+          <h3>Selected courses</h3>
+          <div id="selList"><p class="sel-empty">Nothing chosen yet &mdash; tap a course to begin.</p></div>
+          <button class="clear" id="clearBtn" hidden>Clear all selections</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const FAC = {
+  English:{label:"English",color:"var(--eng)",note:"You must include an English course in your pattern."},
+  Maths:{label:"Mathematics",color:"var(--mat)"},
+  Science:{label:"Science",color:"var(--sci)"},
+  HSIE:{label:"HSIE",color:"var(--hsie)"},
+  Languages:{label:"Languages",color:"var(--lang)"},
+  TAS:{label:"TAS",color:"var(--tas)"},
+  CAPA:{label:"Creative & Performing Arts",color:"var(--capa)"},
+  PDHPE:{label:"PDHPE",color:"var(--pdhpe)"},
+  VET:{label:"VET \u00b7 TAFE NSW",color:"var(--vet)",note:"Optional HSC exam counts toward ATAR \u00b7 mandatory work placement."}
+};
+const COURSES = [
+  {id:"eng-std",name:"English Standard",fac:"English",prelim:2,hsc:2,isEnglish:true,note:"Counts to ATAR; widely-studied quality texts."},
+  {id:"eng-adv",name:"English Advanced",fac:"English",prelim:2,hsc:2,isEnglish:true,note:"Shakespeare study is mandatory."},
+  {id:"eng-stud",name:"English Studies",fac:"English",prelim:2,hsc:2,isEnglish:true,exam:"Optional exam for ATAR",note:"ATAR-eligible only if you sit the optional HSC exam."},
+  {id:"eng-eald",name:"English EAL/D",fac:"English",prelim:2,hsc:2,isEnglish:true,note:"For students with 5 years or less of English education; eligibility rules apply."},
+  {id:"eng-ext1",name:"English Extension 1",fac:"English",prelim:1,hsc:1,requires:["eng-adv"],note:"Co-requisite: English Advanced. Related research project."},
+  {id:"eng-ext2",name:"English Extension 2",fac:"English",prelim:0,hsc:1,major:"Major Work",requires:["eng-ext1"],note:"Year 12 only. Major Work worth 60 of 100 marks; prerequisite English Extension 1."},
+  {id:"mat-std",name:"Mathematics Standard",fac:"Maths",prelim:2,hsc:2,exam:"Std 1 needs optional exam",note:"Standard 2 is ATAR-eligible. Standard 1 counts to ATAR only with the optional HSC exam."},
+  {id:"mat-adv",name:"Mathematics Advanced",fac:"Maths",prelim:2,hsc:2,note:"Algebra-driven; competence in algebra assumed."},
+  {id:"mat-ext1",name:"Mathematics Extension 1",fac:"Maths",prelim:1,hsc:1,requires:["mat-adv"],note:"Co-requisite: Mathematics Advanced."},
+  {id:"mat-ext2",name:"Mathematics Extension 2",fac:"Maths",prelim:0,hsc:1,requires:["mat-ext1"],note:"Year 12 only. Prerequisite: Mathematics Extension 1."},
+  {id:"sci-bio",name:"Biology",fac:"Science",prelim:2,hsc:2,note:"Mandatory depth study + practical work each year."},
+  {id:"sci-chem",name:"Chemistry",fac:"Science",prelim:2,hsc:2,note:"Mandatory depth study; strong Year 10 maths & science recommended."},
+  {id:"sci-ees",name:"Earth & Environmental Science",fac:"Science",prelim:2,hsc:2,note:"Mandatory depth study + fieldwork each year."},
+  {id:"sci-inv",name:"Investigating Science",fac:"Science",prelim:2,hsc:2,note:"Foundation science; recommended before Science Extension."},
+  {id:"sci-phys",name:"Physics",fac:"Science",prelim:2,hsc:2,note:"Mandatory depth study; studying Mathematics alongside is advised."},
+  {id:"sci-ext",name:"Science Extension",fac:"Science",prelim:0,hsc:1,major:"Research Report",note:"Year 12 only. Produces a publication-standard scientific research report. Investigating Science recommended first."},
+  {id:"hs-abor",name:"Aboriginal Studies",fac:"HSIE",prelim:2,hsc:2,major:"Major Project \u00b7 40%",note:"Includes a mandatory local community case study."},
+  {id:"hs-anc",name:"Ancient History",fac:"HSIE",prelim:2,hsc:2,ext:"+1 unit extension (Yr 12)",note:"Core study: Pompeii & Herculaneum. Can lead to History Extension."},
+  {id:"hs-bus",name:"Business Studies",fac:"HSIE",prelim:2,hsc:2,note:"Includes an independent research project."},
+  {id:"hs-eco",name:"Economics",fac:"HSIE",prelim:2,hsc:2,note:"Microeconomics in Year 11, macroeconomics in Year 12."},
+  {id:"hs-geo",name:"Geography",fac:"HSIE",prelim:2,hsc:2,note:"Mandatory geographical investigation + 12 hours fieldwork each year."},
+  {id:"hs-leg",name:"Legal Studies",fac:"HSIE",prelim:2,hsc:2,note:"Law, justice and human rights in Australia and internationally."},
+  {id:"hs-mod",name:"Modern History",fac:"HSIE",prelim:2,hsc:2,ext:"+1 unit extension (Yr 12)",note:"Can lead to History Extension."},
+  {id:"hs-soc",name:"Society & Culture",fac:"HSIE",prelim:2,hsc:2,major:"Personal Interest Project \u00b7 40%",note:"Major Personal Interest Project (PIP)."},
+  {id:"hs-sor",name:"Studies of Religion II",fac:"HSIE",prelim:2,hsc:2,note:"Includes a Special Interest Study Project and three cross-religion studies."},
+  {id:"hs-hext",name:"History Extension",fac:"HSIE",prelim:0,hsc:1,major:"Historical project",requires:["hs-mod","hs-anc"],note:"Year 12 only. Requires Modern or Ancient History; students design a personal historical project."},
+  {id:"ln-chb",name:"Chinese Beginners",fac:"Languages",prelim:2,hsc:2,note:"No prior Chinese required; eligibility rules apply."},
+  {id:"ln-chl",name:"Chinese & Literature",fac:"Languages",prelim:2,hsc:2,note:"For students with a Chinese cultural & schooling background."},
+  {id:"ln-chc",name:"Chinese Continuers",fac:"Languages",prelim:2,hsc:2,ext:"+1 unit extension (Yr 12)",note:"~100 hours prior study assumed; eligibility rules apply."},
+  {id:"ln-chx",name:"Chinese in Context",fac:"Languages",prelim:2,hsc:2,note:"For students with some background; eligibility rules apply."},
+  {id:"ln-frb",name:"French Beginners",fac:"Languages",prelim:2,hsc:2,note:"No prior French required."},
+  {id:"ln-frc",name:"French Continuers",fac:"Languages",prelim:2,hsc:2,ext:"+1 unit extension (Yr 12)",note:"For students with 200-400 hours of prior French."},
+  {id:"ln-itb",name:"Italian Beginners",fac:"Languages",prelim:2,hsc:2,note:"No prior Italian required."},
+  {id:"ln-jpb",name:"Japanese Beginners",fac:"Languages",prelim:2,hsc:2,note:"No prior Japanese required."},
+  {id:"ln-jpc",name:"Japanese Continuers",fac:"Languages",prelim:2,hsc:2,ext:"+1 unit extension (Yr 12)",note:"For students with 200-400 hours of prior Japanese."},
+  {id:"tas-dt",name:"Design & Technology",fac:"TAS",prelim:2,hsc:2,major:"Major Design Project \u00b7 60%",note:"Two design projects in Year 11; students buy their own Year 12 materials."},
+  {id:"tas-eng",name:"Engineering Studies",fac:"TAS",prelim:2,hsc:2,note:"Mandatory engineering reports across the course."},
+  {id:"tas-ent",name:"Enterprise Computing",fac:"TAS",prelim:2,hsc:2,major:"Enterprise project",note:"Builds to a major enterprise project in Year 12."},
+  {id:"tas-food",name:"Food Technology",fac:"TAS",prelim:2,hsc:2,note:"A food consumable fee applies."},
+  {id:"tas-itm",name:"Industrial Technology \u00b7 Multimedia",fac:"TAS",prelim:2,hsc:2,major:"Major Project \u00b7 60%",note:"You may take only ONE Industrial Technology focus area.",excludes:["tas-itt"]},
+  {id:"tas-itt",name:"Industrial Technology \u00b7 Timber Products & Furniture",fac:"TAS",prelim:2,hsc:2,major:"Major Project \u00b7 60%",note:"You may take only ONE Industrial Technology focus area.",excludes:["tas-itm"]},
+  {id:"tas-soft",name:"Software Engineering",fac:"TAS",prelim:2,hsc:2,major:"Software project",note:"Builds to a major software engineering project."},
+  {id:"tas-tex",name:"Textiles & Design",fac:"TAS",prelim:2,hsc:2,major:"Major Textiles Project \u00b7 50%",note:"Two textile projects in Year 11."},
+  {id:"ca-dra",name:"Drama",fac:"CAPA",prelim:2,hsc:2,major:"Group + individual project",note:"Collaborative ensemble performance plus an individual project."},
+  {id:"ca-mus1",name:"Music 1",fac:"CAPA",prelim:2,hsc:2,note:"Music mandatory course (or equivalent); confident instrument playing needed."},
+  {id:"ca-mus2",name:"Music 2",fac:"CAPA",prelim:2,hsc:2,ext:"+1 unit Music Extension (Yr 12)",note:"Must read sheet music; min Grade 5 AMEB performance. Submitted-works portfolio."},
+  {id:"ca-va",name:"Visual Arts",fac:"CAPA",prelim:2,hsc:2,major:"Body of Work \u00b7 50%",note:"Mandatory process diary; develops a Body of Work in Year 12."},
+  {id:"pd-cafs",name:"Community & Family Studies",fac:"PDHPE",prelim:2,hsc:2,major:"Independent Research Project \u00b7 20%",note:"Three mandatory modules each year."},
+  {id:"pd-hms",name:"Health & Movement Science",fac:"PDHPE",prelim:2,hsc:2,major:"Collaborative Investigation",note:"Replaces PDHPE. Mandatory depth studies + collaborative investigation."},
+  {id:"vet-auto",name:"Automotive",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert II pathway. Mandatory work placement."},
+  {id:"vet-bus",name:"Business Services",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert II/III pathway. Mandatory work placement."},
+  {id:"vet-con",name:"Construction",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert II pathway. Mandatory work placement."},
+  {id:"vet-elec",name:"Electrotechnology",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert II pathway. Mandatory work placement."},
+  {id:"vet-ent",name:"Entertainment Industry",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert III pathway. Mandatory work placement."},
+  {id:"vet-hosp",name:"Hospitality",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Kitchen Ops or Food & Beverage. Mandatory work placement."},
+  {id:"vet-hum",name:"Human Services",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Health Services Assistance pathway. Mandatory work placement."},
+  {id:"vet-idt",name:"Information & Digital Technology",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert II/III pathway. Mandatory work placement."},
+  {id:"vet-met",name:"Metal & Engineering",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert II pathway. Mandatory work placement."},
+  {id:"vet-prim",name:"Primary Industries",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert II pathway. Mandatory work placement."},
+  {id:"vet-ret",name:"Retail Services",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert II/III pathway. Mandatory work placement."},
+  {id:"vet-tour",name:"Tourism, Travel & Events",fac:"VET",prelim:2,hsc:2,exam:"Optional HSC exam",work:true,note:"Cert II/III pathway. Mandatory work placement."}
+];
+const FAC_ORDER = ["English","Maths","Science","HSIE","Languages","TAS","CAPA","PDHPE","VET"];
+const byId = id => COURSES.find(c=>c.id===id);
+const state = { selected:new Set(), fac:"all", flags:new Set(), q:"" };
+
+const facChips = document.getElementById("facChips");
+function chip(label,val,active){
+  const b=document.createElement("button");
+  b.className="chip";b.textContent=label;b.dataset.fac=val;
+  b.setAttribute("aria-pressed",active?"true":"false");
+  b.onclick=()=>{state.fac=val;[...facChips.children].forEach(c=>c.setAttribute("aria-pressed",c.dataset.fac===val?"true":"false"));render();};
+  return b;
+}
+facChips.appendChild(chip("All faculties","all",true));
+FAC_ORDER.forEach(f=>facChips.appendChild(chip(FAC[f].label,f,false)));
+
+document.getElementById("flagChips").addEventListener("click",e=>{
+  const b=e.target.closest(".flag"); if(!b) return;
+  const f=b.dataset.flag, on=b.getAttribute("aria-pressed")==="true";
+  b.setAttribute("aria-pressed",String(!on));
+  on?state.flags.delete(f):state.flags.add(f);
+  render();
+});
+document.getElementById("search").addEventListener("input",e=>{state.q=e.target.value.toLowerCase().trim();render();});
+
+const catalog=document.getElementById("catalog");
+function matches(c){
+  if(state.fac!=="all" && c.fac!==state.fac) return false;
+  if(state.flags.has("major") && !c.major) return false;
+  if(state.flags.has("ext") && !c.ext) return false;
+  if(state.flags.has("vet") && c.fac!=="VET") return false;
+  if(state.flags.has("selected") && !state.selected.has(c.id)) return false;
+  if(state.q){
+    const hay=(c.name+" "+FAC[c.fac].label+" "+(c.note||"")).toLowerCase();
+    if(!hay.includes(state.q)) return false;
+  }
+  return true;
+}
+function card(c){
+  const sel=state.selected.has(c.id);
+  const units=c.prelim>0?(c.prelim+" unit"+(c.prelim>1?"s":"")+" ea. year"):"1 unit \u00b7 Yr 12";
+  const b=document.createElement("button");
+  b.className="card";b.style.setProperty("--fac",FAC[c.fac].color);
+  b.setAttribute("aria-pressed",sel?"true":"false");
+  let tags='<span class="tag units">'+units+'</span>';
+  if(c.major) tags+='<span class="tag major">\u2605 '+c.major+'</span>';
+  if(c.ext)   tags+='<span class="tag ext">\u2197 Extension</span>';
+  if(c.exam)  tags+='<span class="tag exam">'+c.exam+'</span>';
+  if(c.work)  tags+='<span class="tag work">Work placement</span>';
+  b.innerHTML='<span class="tick"></span><div class="cname">'+c.name+'</div>'+
+    (c.note?'<div class="cnote">'+c.note+'</div>':'')+
+    '<div class="cmeta">'+tags+'</div>';
+  b.onclick=()=>toggle(c.id);
+  return b;
+}
+function render(){
+  catalog.innerHTML="";
+  const shown=COURSES.filter(matches);
+  document.getElementById("facount").textContent="Showing "+shown.length+" of "+COURSES.length+" courses";
+  if(!shown.length){
+    catalog.innerHTML='<p class="empty-msg">No courses match those filters. Try clearing the search or a filter chip.</p>';
+    updatePanel();return;
+  }
+  FAC_ORDER.forEach(f=>{
+    const list=shown.filter(c=>c.fac===f);
+    if(!list.length) return;
+    const t=document.createElement("div");
+    t.className="group-title";
+    t.innerHTML='<span class="dot" style="background:'+FAC[f].color+'"></span>'+FAC[f].label;
+    catalog.appendChild(t);
+    if(FAC[f].note){
+      const s=document.createElement("p");s.className="group-sub";s.textContent=FAC[f].note;catalog.appendChild(s);
+    }
+    const g=document.createElement("div");g.className="cards";
+    list.forEach(c=>g.appendChild(card(c)));
+    catalog.appendChild(g);
+  });
+  updatePanel();
+}
+function toggle(id){
+  if(state.selected.has(id)) state.selected.delete(id);
+  else state.selected.add(id);
+  render();
+}
+function updatePanel(){
+  const sel=[...state.selected].map(byId);
+  let prelim=0,hsc=0,major=0,vet=0,hasEnglish=false;
+  sel.forEach(c=>{prelim+=c.prelim;hsc+=c.hsc;if(c.major)major++;if(c.fac==="VET")vet++;if(c.isEnglish)hasEnglish=true;});
+  setMeter("prelim",prelim,12);
+  setMeter("hsc",hsc,10);
+  document.getElementById("courseCount").textContent=sel.length;
+  document.getElementById("majorCount").textContent=major;
+  document.getElementById("vetCount").textContent=vet;
+  const checks=[];
+  checks.push({ok:hasEnglish,t:hasEnglish?"English course included":"Add an English course (compulsory)"});
+  checks.push({ok:prelim>=12,t:prelim>=12?("Preliminary units met ("+prelim+")"):("Need "+(12-prelim)+" more Preliminary unit"+((12-prelim)===1?"":"s"))});
+  checks.push({ok:hsc>=10,t:hsc>=10?("HSC units met ("+hsc+")"):("Need "+(10-hsc)+" more HSC unit"+((10-hsc)===1?"":"s"))});
+  sel.forEach(c=>{
+    if(c.requires){
+      const has=c.requires.some(r=>state.selected.has(r));
+      if(!has){
+        const names=c.requires.map(r=>byId(r).name).join(" or ");
+        checks.push({ok:false,t:c.name+" needs "+names});
+      }
+    }
+    if(c.excludes){
+      c.excludes.forEach(x=>{ if(state.selected.has(x))
+        checks.push({ok:false,t:"Pick only one: "+c.name+" or "+byId(x).name});});
+    }
+  });
+  const cb=document.getElementById("checks");cb.innerHTML="";
+  checks.forEach(ch=>{
+    const d=document.createElement("div");d.className="check "+(ch.ok?"ok":"no");
+    d.innerHTML='<span class="ic"></span><span>'+ch.t+'</span>';cb.appendChild(d);
+  });
+  const sl=document.getElementById("selList");
+  if(!sel.length){sl.innerHTML='<p class="sel-empty">Nothing chosen yet &mdash; tap a course to begin.</p>';}
+  else{
+    sl.innerHTML="";
+    const ordered=FAC_ORDER.flatMap(f=>sel.filter(c=>c.fac===f));
+    ordered.forEach(c=>{
+      const u=c.prelim>0?(c.prelim+"u"):"1u\u00b7Y12";
+      const row=document.createElement("div");row.className="sel-item";
+      row.innerHTML='<span class="sd" style="background:'+FAC[c.fac].color+'"></span>'+
+        '<span class="sn">'+c.name+'</span><span class="su">'+u+'</span>'+
+        '<button title="Remove" aria-label="Remove '+c.name+'">\u00d7</button>';
+      row.querySelector("button").onclick=()=>toggle(c.id);
+      sl.appendChild(row);
+    });
+  }
+  document.getElementById("clearBtn").hidden=!sel.length;
+}
+function setMeter(key,val,target){
+  document.getElementById(key+"Val").textContent=val;
+  const bar=document.getElementById(key+"Bar");
+  bar.querySelector("i").style.width=Math.min(100,(val/target)*100)+"%";
+  bar.classList.toggle("met",val>=target);
+}
+document.getElementById("clearBtn").onclick=()=>{state.selected.clear();render();};
+render();
+</script>
+</body>
+</html>
