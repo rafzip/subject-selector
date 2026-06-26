@@ -30,6 +30,7 @@
   .rule b{color:#fff;}
 
   .grid{display:grid;grid-template-columns:1fr 320px;gap:30px;align-items:start;padding:30px 0 70px;}
+  .grid > aside{align-self:stretch;}
   @media(max-width:880px){.grid{grid-template-columns:1fr;}}
 
   .controls{margin-bottom:18px;}
@@ -65,7 +66,7 @@
   .tag.work{background:#f3eeea;color:#8a5230;}
   .cnote{font-size:11.5px;color:var(--ink-soft);margin-top:7px;line-height:1.35;}
 
-  .panel{position:sticky;top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 19px;}
+  .panel{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 19px;}
   .panel h2{font-family:"Fraunces",serif;font-size:19px;margin:0 0 4px;font-weight:600;}
   .panel .ph-sub{font-size:12px;color:var(--ink-soft);margin:0 0 16px;}
   .meter{margin-bottom:13px;}
@@ -98,9 +99,31 @@
   footer{border-top:1px solid var(--line);padding:24px 0 50px;font-size:12px;color:var(--ink-soft);}
   footer p{margin:4px 0;max-width:80ch;}
   .empty-msg{grid-column:1/-1;padding:36px;text-align:center;color:var(--ink-soft);font-size:14px;font-style:italic;}
+
+  .disclaimer{position:fixed;inset:0;z-index:100;background:rgba(15,22,38,.72);backdrop-filter:blur(3px);display:grid;place-items:center;padding:22px;}
+  .disclaimer[hidden]{display:none;}
+  .dbox{background:var(--card);border:1px solid var(--line);border-top:5px solid var(--gold);border-radius:14px;max-width:520px;width:100%;padding:28px 28px 24px;box-shadow:0 24px 60px -20px rgba(15,22,38,.6);}
+  .dbox .eyebrow{color:var(--gold);}
+  .dbox h2{font-family:"Fraunces",serif;font-size:24px;font-weight:600;margin:0 0 12px;letter-spacing:-.01em;}
+  .dbox p{font-size:14.5px;color:var(--ink-soft);margin:0 0 12px;line-height:1.55;}
+  .dbox p strong{color:var(--ink);}
+  .dbox button{margin-top:8px;width:100%;border:none;background:var(--ink);color:#fff;border-radius:10px;padding:13px;font-size:14.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:.12s;}
+  .dbox button:hover{background:#21314f;}
+  .dbox button:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
 </style>
 </head>
 <body>
+<div class="disclaimer" id="disclaimer" role="dialog" aria-modal="true" aria-labelledby="dTitle" aria-describedby="dBody">
+  <div class="dbox">
+    <p class="eyebrow">Please read before you start</p>
+    <h2 id="dTitle">This is a planning tool only</h2>
+    <div id="dBody">
+      <p>The course information shown here <strong>may not be accurate, complete or up to date</strong>. It is provided for rough planning purposes only.</p>
+      <p>For all decision-making and official course information &mdash; units, prerequisites, rules and eligibility &mdash; you must <strong>refer solely to your subject selection booklet</strong> and speak with your careers advisor.</p>
+    </div>
+    <button id="disclaimerOk" type="button">I understand &mdash; continue</button>
+  </div>
+</div>
 <header class="top">
   <div class="wrap">
     <p class="eyebrow">Year 11 &amp; 12 &middot; NESA Board Developed Courses</p>
@@ -211,11 +234,11 @@ const COURSES = [
   {id:"ln-jpc",name:"Japanese Continuers",fac:"Languages",prelim:2,hsc:2,ext:"+1 unit extension (Yr 12)",note:"For students with 200-400 hours of prior Japanese."},
   {id:"tas-dt",name:"Design & Technology",fac:"TAS",prelim:2,hsc:2,major:"Major Design Project \u00b7 60%",note:"Two design projects in Year 11; students buy their own Year 12 materials."},
   {id:"tas-eng",name:"Engineering Studies",fac:"TAS",prelim:2,hsc:2,note:"Mandatory engineering reports across the course."},
-  {id:"tas-ent",name:"Enterprise Computing",fac:"TAS",prelim:2,hsc:2,major:"Enterprise project",note:"Builds to a major enterprise project in Year 12."},
+  {id:"tas-ent",name:"Enterprise Computing",fac:"TAS",prelim:2,hsc:2,note:"Builds to a major enterprise project in Year 12."},
   {id:"tas-food",name:"Food Technology",fac:"TAS",prelim:2,hsc:2,note:"A food consumable fee applies."},
   {id:"tas-itm",name:"Industrial Technology \u00b7 Multimedia",fac:"TAS",prelim:2,hsc:2,major:"Major Project \u00b7 60%",note:"You may take only ONE Industrial Technology focus area.",excludes:["tas-itt"]},
   {id:"tas-itt",name:"Industrial Technology \u00b7 Timber Products & Furniture",fac:"TAS",prelim:2,hsc:2,major:"Major Project \u00b7 60%",note:"You may take only ONE Industrial Technology focus area.",excludes:["tas-itm"]},
-  {id:"tas-soft",name:"Software Engineering",fac:"TAS",prelim:2,hsc:2,major:"Software project",note:"Builds to a major software engineering project."},
+  {id:"tas-soft",name:"Software Engineering",fac:"TAS",prelim:2,hsc:2,note:"Builds to a major software engineering project."},
   {id:"tas-tex",name:"Textiles & Design",fac:"TAS",prelim:2,hsc:2,major:"Major Textiles Project \u00b7 50%",note:"Two textile projects in Year 11."},
   {id:"ca-dra",name:"Drama",fac:"CAPA",prelim:2,hsc:2,major:"Group + individual project",note:"Collaborative ensemble performance plus an individual project."},
   {id:"ca-mus1",name:"Music 1",fac:"CAPA",prelim:2,hsc:2,note:"Music mandatory course (or equivalent); confident instrument playing needed."},
@@ -374,6 +397,12 @@ function setMeter(key,val,target){
   bar.classList.toggle("met",val>=target);
 }
 document.getElementById("clearBtn").onclick=()=>{state.selected.clear();render();};
+
+const disclaimer=document.getElementById("disclaimer");
+const disclaimerOk=document.getElementById("disclaimerOk");
+disclaimerOk.focus();
+disclaimerOk.onclick=()=>{disclaimer.hidden=true;};
+
 render();
 </script>
 </body>
