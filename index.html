@@ -64,6 +64,9 @@
   .tag.ext{background:#e9eefb;color:#3a558f;}
   .tag.exam{background:#eef3ef;color:#2f7d54;}
   .tag.work{background:#f3eeea;color:#8a5230;}
+  .tag.drop{background:#f6e3da;color:var(--warn);}
+  .card.dropped{opacity:.78;}
+  .card.dropped .cname{text-decoration:line-through;text-decoration-color:rgba(181,83,42,.5);}
   .cnote{font-size:11.5px;color:var(--ink-soft);margin-top:7px;line-height:1.35;}
 
   .panel{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 19px;}
@@ -93,7 +96,11 @@
   .sel-item .sd{width:7px;height:7px;border-radius:50%;flex:none;}
   .sel-item .sn{flex:1;line-height:1.25;}
   .sel-item .su{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:11px;}
-  .sel-item button{border:none;background:none;color:var(--warn);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;font-family:inherit;}
+  .sel-item.dropped .sn{text-decoration:line-through;color:var(--ink-soft);}
+  .sel-item .drop{border:1px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer;font-family:inherit;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;border-radius:5px;padding:2.5px 5px;line-height:1;}
+  .sel-item .drop:hover{border-color:var(--warn);color:var(--warn);}
+  .sel-item .drop[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#fff;}
+  .sel-item .rm{border:none;background:none;color:var(--warn);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;font-family:inherit;}
   .clear{margin-top:14px;width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-soft);font-family:inherit;}
   .clear:hover{border-color:var(--warn);color:var(--warn);}
   footer{border-top:1px solid var(--line);padding:24px 0 50px;font-size:12px;color:var(--ink-soft);}
@@ -168,6 +175,7 @@
           <button class="chip flag" data-flag="ext" aria-pressed="false">Extension subject</button>
           <button class="chip flag" data-flag="vet" aria-pressed="false">VET / TAFE only</button>
           <button class="chip flag" data-flag="selected" aria-pressed="false">My selections</button>
+          <button class="chip flag" data-flag="dropped" aria-pressed="false">Dropping in Yr 12</button>
         </div>
         <p class="facount" id="facount"></p>
       </div>
@@ -278,7 +286,10 @@ const COURSES = [
 ];
 const FAC_ORDER = ["English","Maths","Science","HSIE","Languages","TAS","CAPA","PDHPE","VET"];
 const byId = id => COURSES.find(c=>c.id===id);
+// A course can be dropped after Year 11 only if it is actually studied in both years.
+const droppable = c => c.prelim>0 && c.hsc>0;
 const STORE_KEY = "hsc-selector-selected";
+const DROP_KEY = "hsc-selector-dropped";
 function loadSelected(){
   try{
     const raw=localStorage.getItem(STORE_KEY);
@@ -287,10 +298,22 @@ function loadSelected(){
     return new Set(Array.isArray(ids)?ids.filter(byId):[]);
   }catch(e){ return new Set(); }
 }
+function loadDropped(sel){
+  try{
+    const raw=localStorage.getItem(DROP_KEY);
+    if(!raw) return new Set();
+    const ids=JSON.parse(raw);
+    return new Set(Array.isArray(ids)?ids.filter(id=>{const c=byId(id);return c&&sel.has(id)&&droppable(c);}):[]);
+  }catch(e){ return new Set(); }
+}
 function saveSelected(){
   try{ localStorage.setItem(STORE_KEY,JSON.stringify([...state.selected])); }catch(e){}
 }
+function saveDropped(){
+  try{ localStorage.setItem(DROP_KEY,JSON.stringify([...state.dropped])); }catch(e){}
+}
 const state = { selected:loadSelected(), fac:"all", flags:new Set(), q:"" };
+state.dropped = loadDropped(state.selected);
 
 const facChips = document.getElementById("facChips");
 function chip(label,val,active){
@@ -319,6 +342,7 @@ function matches(c){
   if(state.flags.has("ext") && !c.ext) return false;
   if(state.flags.has("vet") && c.fac!=="VET") return false;
   if(state.flags.has("selected") && !state.selected.has(c.id)) return false;
+  if(state.flags.has("dropped") && !state.dropped.has(c.id)) return false;
   if(state.q){
     const hay=(c.name+" "+FAC[c.fac].label+" "+(c.note||"")).toLowerCase();
     if(!hay.includes(state.q)) return false;
@@ -327,15 +351,17 @@ function matches(c){
 }
 function card(c){
   const sel=state.selected.has(c.id);
+  const dropped=state.dropped.has(c.id);
   const units=c.prelim>0?(c.prelim+" unit"+(c.prelim>1?"s":"")+" ea. year"):"1 unit \u00b7 Yr 12";
   const b=document.createElement("button");
-  b.className="card";b.style.setProperty("--fac",FAC[c.fac].color);
+  b.className="card"+(dropped?" dropped":"");b.style.setProperty("--fac",FAC[c.fac].color);
   b.setAttribute("aria-pressed",sel?"true":"false");
   let tags='<span class="tag units">'+units+'</span>';
   if(c.major) tags+='<span class="tag major">\u2605 '+c.major+'</span>';
   if(c.ext)   tags+='<span class="tag ext">\u2197 Extension</span>';
   if(c.exam)  tags+='<span class="tag exam">'+c.exam+'</span>';
   if(c.work)  tags+='<span class="tag work">Work placement</span>';
+  if(dropped) tags+='<span class="tag drop">\u00d7 Dropping Yr 12</span>';
   b.innerHTML='<span class="tick"></span><div class="cname">'+c.name+'</div>'+
     (c.note?'<div class="cnote">'+c.note+'</div>':'')+
     '<div class="cmeta">'+tags+'</div>';
@@ -367,22 +393,34 @@ function render(){
   updatePanel();
 }
 function toggle(id){
-  if(state.selected.has(id)) state.selected.delete(id);
+  if(state.selected.has(id)){ state.selected.delete(id); state.dropped.delete(id); saveDropped(); }
   else state.selected.add(id);
   saveSelected();
+  render();
+}
+function toggleDrop(id){
+  if(state.dropped.has(id)) state.dropped.delete(id);
+  else state.dropped.add(id);
+  saveDropped();
   render();
 }
 function updatePanel(){
   const sel=[...state.selected].map(byId);
   let prelim=0,hsc=0,major=0,vet=0,hasEnglish=false;
-  sel.forEach(c=>{prelim+=c.prelim;hsc+=c.hsc;if(c.major)major++;if(c.fac==="VET")vet++;if(c.isEnglish)hasEnglish=true;});
+  sel.forEach(c=>{
+    const drop=state.dropped.has(c.id);
+    prelim+=c.prelim;
+    if(!drop){hsc+=c.hsc;if(c.major)major++;if(c.isEnglish)hasEnglish=true;}
+    if(c.fac==="VET")vet++;
+  });
   setMeter("prelim",prelim,12);
   setMeter("hsc",hsc,10);
   document.getElementById("courseCount").textContent=sel.length;
   document.getElementById("majorCount").textContent=major;
   document.getElementById("vetCount").textContent=vet;
   const checks=[];
-  checks.push({ok:hasEnglish,t:hasEnglish?"English course included":"Add an English course (compulsory)"});
+  const englishDropped=!hasEnglish && sel.some(c=>c.isEnglish&&state.dropped.has(c.id));
+  checks.push({ok:hasEnglish,t:hasEnglish?"English course included":(englishDropped?"You're dropping your only English — English is compulsory in Year 12":"Add an English course (compulsory)")});
   checks.push({ok:prelim>=12,t:prelim>=12?("Preliminary units met ("+prelim+")"):("Need "+(12-prelim)+" more Preliminary unit"+((12-prelim)===1?"":"s"))});
   checks.push({ok:hsc>=10,t:hsc>=10?("HSC units met ("+hsc+")"):("Need "+(10-hsc)+" more HSC unit"+((10-hsc)===1?"":"s"))});
   sel.forEach(c=>{
@@ -409,12 +447,18 @@ function updatePanel(){
     sl.innerHTML="";
     const ordered=FAC_ORDER.flatMap(f=>sel.filter(c=>c.fac===f));
     ordered.forEach(c=>{
-      const u=c.prelim>0?(c.prelim+"u"):"1u\u00b7Y12";
-      const row=document.createElement("div");row.className="sel-item";
-      row.innerHTML='<span class="sd" style="background:'+FAC[c.fac].color+'"></span>'+
-        '<span class="sn">'+c.name+'</span><span class="su">'+u+'</span>'+
-        '<button title="Remove" aria-label="Remove '+c.name+'">\u00d7</button>';
-      row.querySelector("button").onclick=()=>toggle(c.id);
+      const drop=state.dropped.has(c.id);
+      const u=drop?(c.prelim+"u\u00b7Y11"):(c.prelim>0?(c.prelim+"u"):"1u\u00b7Y12");
+      const row=document.createElement("div");row.className="sel-item"+(drop?" dropped":"");
+      let html='<span class="sd" style="background:'+FAC[c.fac].color+'"></span>'+
+        '<span class="sn">'+c.name+'</span><span class="su">'+u+'</span>';
+      if(droppable(c)) html+='<button class="drop" aria-pressed="'+(drop?"true":"false")+
+        '" title="'+(drop?"Keep in Year 12":"Drop after Year 11")+
+        '" aria-label="'+(drop?"Keep "+c.name+" in Year 12":"Drop "+c.name+" after Year 11")+'">Drop</button>';
+      html+='<button class="rm" title="Remove" aria-label="Remove '+c.name+'">\u00d7</button>';
+      row.innerHTML=html;
+      const db=row.querySelector(".drop");if(db)db.onclick=()=>toggleDrop(c.id);
+      row.querySelector(".rm").onclick=()=>toggle(c.id);
       sl.appendChild(row);
     });
   }
@@ -426,7 +470,7 @@ function setMeter(key,val,target){
   bar.querySelector("i").style.width=Math.min(100,(val/target)*100)+"%";
   bar.classList.toggle("met",val>=target);
 }
-document.getElementById("clearBtn").onclick=()=>{state.selected.clear();saveSelected();render();};
+document.getElementById("clearBtn").onclick=()=>{state.selected.clear();state.dropped.clear();saveSelected();saveDropped();render();};
 
 const disclaimer=document.getElementById("disclaimer");
 const disclaimerOk=document.getElementById("disclaimerOk");
