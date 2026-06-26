@@ -261,7 +261,19 @@ const COURSES = [
 ];
 const FAC_ORDER = ["English","Maths","Science","HSIE","Languages","TAS","CAPA","PDHPE","VET"];
 const byId = id => COURSES.find(c=>c.id===id);
-const state = { selected:new Set(), fac:"all", flags:new Set(), q:"" };
+const STORE_KEY = "hsc-selector-selected";
+function loadSelected(){
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(!raw) return new Set();
+    const ids=JSON.parse(raw);
+    return new Set(Array.isArray(ids)?ids.filter(byId):[]);
+  }catch(e){ return new Set(); }
+}
+function saveSelected(){
+  try{ localStorage.setItem(STORE_KEY,JSON.stringify([...state.selected])); }catch(e){}
+}
+const state = { selected:loadSelected(), fac:"all", flags:new Set(), q:"" };
 
 const facChips = document.getElementById("facChips");
 function chip(label,val,active){
@@ -340,6 +352,7 @@ function render(){
 function toggle(id){
   if(state.selected.has(id)) state.selected.delete(id);
   else state.selected.add(id);
+  saveSelected();
   render();
 }
 function updatePanel(){
@@ -396,7 +409,7 @@ function setMeter(key,val,target){
   bar.querySelector("i").style.width=Math.min(100,(val/target)*100)+"%";
   bar.classList.toggle("met",val>=target);
 }
-document.getElementById("clearBtn").onclick=()=>{state.selected.clear();render();};
+document.getElementById("clearBtn").onclick=()=>{state.selected.clear();saveSelected();render();};
 
 const disclaimer=document.getElementById("disclaimer");
 const disclaimerOk=document.getElementById("disclaimerOk");
